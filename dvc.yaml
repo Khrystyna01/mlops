@@ -1,0 +1,17 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+      - data/raw/healthcare-dataset-stroke-data.csv
+      - src/prepare.py
+    outs:
+      - data/prepared
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - data/prepared/train.csv
+      - data/prepared/test.csv
+      - src/train.py
+    outs:
+      - models
