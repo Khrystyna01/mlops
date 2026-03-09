@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.env
+
+# Data and models
+data/
+models/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# MLflow
+mlruns/
+mlflow.db
+
+# Experiment artifacts
+artifacts/
+
+# IDE
+.idea/
+
+# Trash
+.trash/
