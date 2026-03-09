@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use("Agg")
+
 import argparse
 import json
 from pathlib import Path
@@ -23,7 +26,6 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 
@@ -73,16 +75,21 @@ def save_confusion_matrix_png(y_true, y_pred, out_path: Path) -> None:
     plt.close()
 
 
-def save_feature_importance_top25(model: RandomForestClassifier,
-                                 feature_names: Optional[List[str]],
-                                 out_png: Path,
-                                 out_csv: Path) -> None:
+def save_feature_importance_top25(
+    model: RandomForestClassifier,
+    feature_names: Optional[List[str]],
+    out_png: Path,
+    out_csv: Path
+) -> None:
     importances = model.feature_importances_
 
     if feature_names and len(feature_names) == len(importances):
         fi = pd.DataFrame({"feature": feature_names, "importance": importances})
     else:
-        fi = pd.DataFrame({"feature": [f"f{i}" for i in range(len(importances))], "importance": importances})
+        fi = pd.DataFrame({
+            "feature": [f"f{i}" for i in range(len(importances))],
+            "importance": importances
+        })
 
     fi = fi.sort_values("importance", ascending=False).head(25)
     fi.to_csv(out_csv, index=False)
@@ -97,15 +104,13 @@ def save_feature_importance_top25(model: RandomForestClassifier,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train RandomForest on Stroke dataset with MLflow logging")
+    parser = argparse.ArgumentParser(description="Train RandomForest on prepared Stroke dataset with MLflow logging")
 
-    parser.add_argument("--data_path", type=str, default="data/raw/healthcare-dataset-stroke-data.csv")
+    parser.add_argument("--train_path", type=str, default="data/prepared/train.csv")
+    parser.add_argument("--test_path", type=str, default="data/prepared/test.csv")
     parser.add_argument("--target_col", type=str, default="stroke")
-    parser.add_argument("--drop_cols", type=str, default="id", help="Comma-separated columns to drop")
-    parser.add_argument("--test_size", type=float, default=0.2)
-    parser.add_argument("--random_state", type=int, default=42)
 
-    parser.add_argument("--experiment_name", type=str, default="MLOps_Lab_1")
+    parser.add_argument("--experiment_name", type=str, default="MLOps_Lab_2")
     parser.add_argument("--run_name", type=str, default=None)
 
     parser.add_argument("--author", type=str, default=None)
@@ -114,13 +119,13 @@ def main():
     parser.add_argument("--n_estimators", type=int, default=200)
     parser.add_argument("--max_depth", type=int, default=6, help="<=0 means None (unlimited)")
     parser.add_argument("--min_samples_split", type=int, default=2)
-    parser.add_argument("--use_class_weight", action="store_true")
+    parser.add_argument("--random_state", type=int, default=42)
 
     parser.add_argument("--threshold", type=float, default=0.5)
+    parser.add_argument("--use_class_weight", action="store_true")
 
     parser.add_argument("--models_dir", type=str, default="models")
     parser.add_argument("--artifacts_dir", type=str, default="artifacts")
-
     parser.add_argument("--skip_local_model_save", action="store_true")
 
     args = parser.parse_args()
@@ -128,9 +133,13 @@ def main():
     script_dir = Path(__file__).resolve().parent
     project_root = script_dir.parent
 
-    data_path = Path(args.data_path)
-    if not data_path.is_absolute():
-        data_path = (project_root / data_path).resolve()
+    train_path = Path(args.train_path)
+    if not train_path.is_absolute():
+        train_path = (project_root / train_path).resolve()
+
+    test_path = Path(args.test_path)
+    if not test_path.is_absolute():
+        test_path = (project_root / test_path).resolve()
 
     models_dir = Path(args.models_dir)
     if not models_dir.is_absolute():
@@ -143,30 +152,37 @@ def main():
     ensure_dir(models_dir)
     ensure_dir(artifacts_dir)
 
-    if not data_path.exists():
-        raise FileNotFoundError(f"Data file not found: {data_path}")
+    if not train_path.exists():
+        raise FileNotFoundError(f"Train file not found: {train_path}")
+    if not test_path.exists():
+        raise FileNotFoundError(f"Test file not found: {test_path}")
 
-    df = pd.read_csv(data_path)
-    if args.target_col not in df.columns:
-        raise ValueError(f"Target column '{args.target_col}' not found. Columns: {df.columns.tolist()}")
+    train_df = pd.read_csv(train_path)
+    test_df = pd.read_csv(test_path)
 
-    y = df[args.target_col].astype(int)
-    X = df.drop(columns=[args.target_col], errors="ignore")
+    if args.target_col not in train_df.columns:
+        raise ValueError(f"Target column '{args.target_col}' not found in train data")
+    if args.target_col not in test_df.columns:
+        raise ValueError(f"Target column '{args.target_col}' not found in test data")
 
-    drop_cols = [c.strip() for c in args.drop_cols.split(",") if c.strip()]
-    if drop_cols:
-        X = X.drop(columns=drop_cols, errors="ignore")
+    y_train = train_df[args.target_col].astype(int)
+    X_train = train_df.drop(columns=[args.target_col], errors="ignore")
 
-    categorical_cols = X.select_dtypes(include=["object"]).columns.tolist()
-    numeric_cols = X.select_dtypes(include=[np.number]).columns.tolist()
+    y_test = test_df[args.target_col].astype(int)
+    X_test = test_df.drop(columns=[args.target_col], errors="ignore")
+
+    categorical_cols = X_train.select_dtypes(include=["object"]).columns.tolist()
+    numeric_cols = X_train.select_dtypes(include=[np.number]).columns.tolist()
 
     numeric_pipeline = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="median")),
     ])
+
     categorical_pipeline = Pipeline(steps=[
         ("imputer", SimpleImputer(strategy="most_frequent")),
         ("onehot", make_onehot_encoder()),
     ])
+
     preprocessor = ColumnTransformer(
         transformers=[
             ("num", numeric_pipeline, numeric_cols),
@@ -176,6 +192,7 @@ def main():
     )
 
     class_weight = "balanced" if args.use_class_weight else None
+
     rf = RandomForestClassifier(
         n_estimators=args.n_estimators,
         max_depth=None if args.max_depth <= 0 else args.max_depth,
@@ -190,19 +207,12 @@ def main():
         ("model", rf),
     ])
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y,
-        test_size=args.test_size,
-        random_state=args.random_state,
-        stratify=y
-    )
-
     mlflow.set_experiment(args.experiment_name)
 
     if not args.run_name:
         args.run_name = f"rf_depth{args.max_depth}_est{args.n_estimators}"
 
-    tags = {"model_type": "RandomForest", "lab": "lab_1"}
+    tags = {"model_type": "RandomForest", "lab": "lab_2"}
     if args.author:
         tags["author"] = args.author
     if args.dataset_version:
@@ -211,9 +221,8 @@ def main():
     with mlflow.start_run(run_name=args.run_name) as run:
         mlflow.set_tags(tags)
 
-        mlflow.log_param("data_path", str(data_path))
-        mlflow.log_param("drop_cols", ",".join(drop_cols))
-        mlflow.log_param("test_size", args.test_size)
+        mlflow.log_param("train_path", str(train_path))
+        mlflow.log_param("test_path", str(test_path))
         mlflow.log_param("random_state", args.random_state)
         mlflow.log_param("threshold", args.threshold)
 
@@ -266,7 +275,6 @@ def main():
         mlflow.log_artifact(str(fi_png))
         mlflow.log_artifact(str(fi_csv))
 
-        # Логування моделі в MLflow
         mlflow.sklearn.log_model(clf, artifact_path="model")
 
         if not args.skip_local_model_save:
@@ -294,6 +302,7 @@ def main():
             },
             "tags": tags,
         }
+
         summary_path = artifacts_dir / f"run_summary_{run.info.run_id}.json"
         summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
         mlflow.log_artifact(str(summary_path))
