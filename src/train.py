@@ -5,10 +5,6 @@ from pathlib import Path
 
 import joblib
 import matplotlib
-
-matplotlib.use("Agg")
-
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 import pandas as pd
@@ -23,6 +19,10 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 
 
 def ensure_dir(path: Path) -> None:
