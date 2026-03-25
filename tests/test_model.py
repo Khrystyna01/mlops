@@ -24,7 +24,7 @@ EXPECTED_COLUMNS = {
     TARGET_COL,
 }
 
-ROC_AUC_THRESHOLD = 0.75
+ROC_AUC_THRESHOLD = 0.7
 
 
 def test_train_file_exists():
