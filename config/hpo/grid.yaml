@@ -1,0 +1,6 @@
+n_trials: 20
+sampler: "grid"
+metric: "roc_auc"
+direction: "maximize"
+use_cv: false
+cv_folds: 5

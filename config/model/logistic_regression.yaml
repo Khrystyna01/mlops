@@ -1,0 +1,15 @@
+type: logistic_regression
+
+search_space:
+  C:
+    low: 0.001
+    high: 10.0
+    log: true
+
+  solver:
+    choices: [liblinear, lbfgs]
+
+  class_weight:
+    choices: [null, balanced]
+
+  max_iter: 2000

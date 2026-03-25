@@ -1,0 +1,69 @@
+defaults:
+  - hpo: optuna
+  - _self_
+
+seed: 42
+
+mlflow:
+  tracking_uri: "file:./mlruns"
+  experiment_name: "HPO_Lab3"
+  log_model: true
+  register_model: false
+  model_name: "BestOptimizedModel"
+  stage: "Staging"
+
+data:
+  train_path: "data/prepared/train.csv"
+  val_path: "data/prepared/val.csv"
+  test_path: "data/prepared/test.csv"
+  target_col: "stroke"
+
+model:
+  type: "random_forest"
+
+random_forest:
+  n_estimators:
+    low: 50
+    high: 300
+  max_depth:
+    low: 3
+    high: 15
+  min_samples_split:
+    low: 2
+    high: 10
+  min_samples_leaf:
+    low: 1
+    high: 5
+  class_weight: [null, "balanced", "balanced_subsample"]
+
+logistic_regression:
+  C:
+    low: 0.001
+    high: 100.0
+  solver: ["liblinear", "lbfgs"]
+  penalty: ["l2"]
+  class_weight: [null, "balanced"]
+
+grid:
+  random_forest:
+    n_estimators: [50, 100, 200]
+    max_depth: [5, 10, 15]
+    min_samples_split: [2, 5, 10]
+    min_samples_leaf: [1, 2, 4]
+    class_weight: [null, "balanced"]
+  logistic_regression:
+    C: [0.01, 0.1, 1.0, 10.0]
+    solver: ["liblinear"]
+    penalty: ["l2"]
+    class_weight: [null, "balanced"]
+
+artifacts:
+  output_dir: "artifacts/hpo"
+  best_params_path: "artifacts/hpo/best_params.json"
+  best_metrics_path: "artifacts/hpo/best_metrics.json"
+  best_model_path: "models/best_model.pkl"
+
+hydra:
+  run:
+    dir: .
+  output_subdir: null
