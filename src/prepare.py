@@ -12,43 +12,23 @@ def ensure_dir(path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Prepare stroke dataset")
     parser.add_argument(
-        "--input_path",
-        type=str,
-        default="data/raw/healthcare-dataset-stroke-data.csv"
+        "--input_path", type=str, default="data/raw/healthcare-dataset-stroke-data.csv"
+    )
+    parser.add_argument("--output_dir", type=str, default="data/prepared")
+    parser.add_argument("--target_col", type=str, default="stroke")
+    parser.add_argument(
+        "--drop_cols", type=str, default="id", help="Comma-separated columns to drop"
     )
     parser.add_argument(
-        "--output_dir",
-        type=str,
-        default="data/prepared"
-    )
-    parser.add_argument(
-        "--target_col",
-        type=str,
-        default="stroke"
-    )
-    parser.add_argument(
-        "--drop_cols",
-        type=str,
-        default="id",
-        help="Comma-separated columns to drop"
-    )
-    parser.add_argument(
-        "--test_size",
-        type=float,
-        default=0.2,
-        help="Part of data for final test split"
+        "--test_size", type=float, default=0.2, help="Part of data for final test split"
     )
     parser.add_argument(
         "--val_size",
         type=float,
         default=0.2,
-        help="Part of remaining train data for validation split"
+        help="Part of remaining train data for validation split",
     )
-    parser.add_argument(
-        "--random_state",
-        type=int,
-        default=42
-    )
+    parser.add_argument("--random_state", type=int, default=42)
 
     args = parser.parse_args()
 
@@ -113,7 +93,7 @@ def main() -> None:
         df,
         test_size=args.test_size,
         random_state=args.random_state,
-        stratify=df[args.target_col]
+        stratify=df[args.target_col],
     )
 
     # 5. Розбиття train+val на train і val
@@ -121,7 +101,7 @@ def main() -> None:
         train_val_df,
         test_size=args.val_size,
         random_state=args.random_state,
-        stratify=train_val_df[args.target_col]
+        stratify=train_val_df[args.target_col],
     )
 
     train_path = output_dir / "train.csv"

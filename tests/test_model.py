@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 TRAIN_PATH = PROJECT_ROOT / "data" / "prepared" / "train.csv"
@@ -105,6 +104,5 @@ def test_quality_gate_roc_auc():
     roc_auc = metrics["test_roc_auc"]
 
     assert roc_auc >= ROC_AUC_THRESHOLD, (
-        f"Quality gate failed: test_roc_auc={roc_auc:.4f} "
-        f"< {ROC_AUC_THRESHOLD:.2f}"
+        f"Quality gate failed: test_roc_auc={roc_auc:.4f} " f"< {ROC_AUC_THRESHOLD:.2f}"
     )

@@ -12,7 +12,12 @@ import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    f1_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 
@@ -129,7 +134,9 @@ def make_sampler(
     raise ValueError("sampler should be: tpe, random, grid")
 
 
-def suggest_params(trial: optuna.Trial, model_type: str, cfg: DictConfig) -> Dict[str, Any]:
+def suggest_params(
+    trial: optuna.Trial, model_type: str, cfg: DictConfig
+) -> Dict[str, Any]:
     if model_type == "random_forest":
         space = cfg.random_forest
         return {

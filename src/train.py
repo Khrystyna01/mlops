@@ -60,15 +60,15 @@ def save_confusion_matrix_png(y_true, y_pred, out_path: Path) -> None:
 
 
 def save_feature_importance_top25(
-    model,
-    feature_names,
-    out_png: Path,
-    out_csv: Path
+    model, feature_names, out_png: Path, out_csv: Path
 ) -> None:
-    fi = pd.DataFrame({
-        "feature": feature_names,
-        "importance": model.feature_importances_
-    }).sort_values("importance", ascending=False).head(25)
+    fi = (
+        pd.DataFrame(
+            {"feature": feature_names, "importance": model.feature_importances_}
+        )
+        .sort_values("importance", ascending=False)
+        .head(25)
+    )
 
     fi.to_csv(out_csv, index=False)
 
@@ -98,10 +98,7 @@ def main() -> None:
 
     parser.add_argument("--n_estimators", type=int, default=200)
     parser.add_argument(
-        "--max_depth",
-        type=int,
-        default=6,
-        help="<=0 means None (unlimited)"
+        "--max_depth", type=int, default=6, help="<=0 means None (unlimited)"
     )
     parser.add_argument("--min_samples_split", type=int, default=2)
     parser.add_argument("--random_state", type=int, default=42)
@@ -196,8 +193,7 @@ def main() -> None:
         mlflow.log_param("max_depth", args.max_depth)
         mlflow.log_param("min_samples_split", args.min_samples_split)
         mlflow.log_param(
-            "class_weight",
-            "balanced" if args.use_class_weight else "None"
+            "class_weight", "balanced" if args.use_class_weight else "None"
         )
 
         model.fit(X_train, y_train)
@@ -228,10 +224,7 @@ def main() -> None:
         mlflow.log_metric("test_pr_auc", test_pr_auc)
 
         report_text = classification_report(
-            y_test,
-            y_test_pred,
-            digits=4,
-            zero_division=0
+            y_test, y_test_pred, digits=4, zero_division=0
         )
 
         report_path = artifacts_dir / f"classification_report_{run.info.run_id}.txt"
@@ -250,12 +243,7 @@ def main() -> None:
 
         fi_png = artifacts_dir / f"feature_importance_top25_{run.info.run_id}.png"
         fi_csv = artifacts_dir / f"feature_importance_top25_{run.info.run_id}.csv"
-        save_feature_importance_top25(
-            model,
-            X_train.columns.tolist(),
-            fi_png,
-            fi_csv
-        )
+        save_feature_importance_top25(model, X_train.columns.tolist(), fi_png, fi_csv)
         mlflow.log_artifact(str(fi_png))
         mlflow.log_artifact(str(fi_csv))
 
@@ -282,8 +270,7 @@ def main() -> None:
 
         metrics_path = artifacts_dir / "metrics.json"
         metrics_path.write_text(
-            json.dumps(metrics, indent=2, ensure_ascii=False),
-            encoding="utf-8"
+            json.dumps(metrics, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
         summary = {
@@ -312,8 +299,7 @@ def main() -> None:
 
         summary_path = artifacts_dir / f"run_summary_{run.info.run_id}.json"
         summary_path.write_text(
-            json.dumps(summary, indent=2, ensure_ascii=False),
-            encoding="utf-8"
+            json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         mlflow.log_artifact(str(summary_path))
 
