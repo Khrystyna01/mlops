@@ -9,7 +9,6 @@ from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
 
-
 PROJECT_ROOT = Path("/opt/airflow/project")
 RAW_DATA_PATH = PROJECT_ROOT / "data" / "raw" / "healthcare-dataset-stroke-data.csv"
 METRICS_PATH = PROJECT_ROOT / "artifacts" / "metrics.json"
