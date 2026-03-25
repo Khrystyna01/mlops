@@ -8,7 +8,6 @@ import mlflow.sklearn
 from mlflow.tracking import MlflowClient
 import joblib
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 MODELS_DIR = PROJECT_ROOT / "models"
@@ -32,15 +31,12 @@ def main() -> None:
 
     mlflow.set_experiment(EXPERIMENT_NAME)
 
-    with mlflow.start_run(run_name="register_model_run") as run:
+    with mlflow.start_run(run_name="register_model_run"):
         mlflow.log_metrics(metrics)
         mlflow.log_artifact(str(METRICS_PATH))
         mlflow.log_artifact(str(MODEL_PATH))
 
-        model_info = mlflow.sklearn.log_model(
-            sk_model=model,
-            artifact_path="model"
-        )
+        model_info = mlflow.sklearn.log_model(sk_model=model, artifact_path="model")
 
         model_uri = model_info.model_uri
 
