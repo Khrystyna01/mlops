@@ -41,7 +41,7 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 src tests --max-line-length=100 --exclude=.venv
+          python -m flake8 src/prepare.py src/train.py tests --max-line-length=100 --exclude=.venv
 
       - name: Check formatting with black
         run: |

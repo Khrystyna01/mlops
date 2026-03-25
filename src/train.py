@@ -22,7 +22,7 @@ from sklearn.metrics import (
 
 matplotlib.use("Agg")
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # noqa: E402
 
 
 def ensure_dir(path: Path) -> None:
