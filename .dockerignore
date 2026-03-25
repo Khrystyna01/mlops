@@ -1,0 +1,15 @@
+.git
+.github
+.gitignore
+.dvc/cache
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.idea
+.vscode
+mlruns
+airflow
+logs
+tmp

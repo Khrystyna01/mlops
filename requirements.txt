@@ -8,3 +8,7 @@ jupyter
 optuna
 hydra-core
 omegaconf
+dvc
+joblib
+apache-airflow
+psycopg2-binary
