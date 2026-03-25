@@ -7,4 +7,5 @@ mlflow
 jupyter
 optuna
 hydra-core
+pytest
 omegaconf

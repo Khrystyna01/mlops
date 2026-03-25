@@ -28,5 +28,5 @@ models/
 
 # Data tracked by DVC
 data/raw/*.csv
+!data/raw/healthcare-dataset-stroke-data.csv
 data/prepared/
-/models

@@ -1,0 +1,77 @@
+name: CI-CD-ML
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  train-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest flake8 black cml
+
+      - name: Lint with flake8
+        run: |
+          flake8 src tests --max-line-length=100 --exclude=.venv
+
+      - name: Check formatting with black
+        run: |
+          black --check src tests
+
+      - name: Run data preparation
+        run: |
+          python src/prepare.py
+
+      - name: Train model
+        env:
+          CI: "true"
+        run: |
+          python src/train.py --use_class_weight --threshold 0.3
+
+      - name: Run tests
+        run: |
+          pytest -q
+
+      - name: Create CML report
+        if: github.event_name == 'pull_request'
+        env:
+          REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "# ML Model Report" > report.md
+          echo "" >> report.md
+          echo "## Metrics" >> report.md
+          python -c "import json; m=json.load(open('artifacts/metrics.json', encoding='utf-8')); print(f'- Train accuracy: {m[\"train_accuracy\"]:.4f}'); print(f'- Train F1: {m[\"train_f1\"]:.4f}'); print(f'- Test accuracy: {m[\"test_accuracy\"]:.4f}'); print(f'- Test F1: {m[\"test_f1\"]:.4f}'); print(f'- Test precision: {m[\"test_precision\"]:.4f}'); print(f'- Test recall: {m[\"test_recall\"]:.4f}'); print(f'- Test ROC-AUC: {m[\"test_roc_auc\"]:.4f}'); print(f'- Test PR-AUC: {m[\"test_pr_auc\"]:.4f}');" >> report.md
+          echo "" >> report.md
+          echo "## Confusion Matrix" >> report.md
+          cml publish artifacts/confusion_matrix.png --md >> report.md
+          echo "" >> report.md
+          echo "## Quality Gate" >> report.md
+          python -c "import json; m=json.load(open('artifacts/metrics.json', encoding='utf-8')); print('PASSED' if m['test_roc_auc'] >= 0.75 else 'FAILED')" >> quality_gate.txt
+          echo "- ROC-AUC threshold: 0.75" >> report.md
+          echo -n "- Result: " >> report.md
+          cat quality_gate.txt >> report.md
+          cml comment create report.md
